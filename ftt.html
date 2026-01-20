@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Tournament Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --midnight: #050e26;
+            --electric-cyan: #00f2ff;
+            --royal-blue: #0051ff;
+            --panel-bg: rgba(5, 14, 38, 0.95);
+            --border: 1px solid rgba(0, 242, 255, 0.3);
+            --font-title: 'Russo One', sans-serif;
+            --font-body: 'Roboto Condensed', sans-serif;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0; padding: 0;
+            font-family: var(--font-body);
+            background-color: var(--midnight);
+            color: white;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background: linear-gradient(135deg, #020024 0%, #090979 35%, #00d4ff 100%);
+            background-attachment: fixed;
+        }
+
+        /* --- BACKGROUND VIDEO --- */
+        #bg-video {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover; z-index: -100; opacity: 0.6;
+        }
+        .overlay {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0, 10, 30, 0.5); z-index:-99; pointer-events: none;
+        }
+
+        /* --- HEADER COLUMN --- */
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 40px;
+            background: var(--panel-bg);
+            border-bottom: var(--border);
+            position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            height: 80px;
+        }
+
+        /* Subtitle in Header */
+        .header-title {
+            font-family: var(--font-title);
+            color: #aabde6;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 1.2rem;
+            text-align: center;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            pointer-events: none;
+        }
+
+        /* Unified Button Style */
+        .btn-nav {
+            background: transparent; 
+            border: none; 
+            color: rgba(255,255,255,0.7);
+            cursor: pointer; 
+            font-size: 0.9rem; 
+            font-family: var(--font-title);
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            transition: 0.3s;
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
+            z-index: 101; 
+        }
+        .btn-nav:hover { color: var(--electric-cyan); transform: translateX(2px); text-shadow: 0 0 8px var(--electric-cyan); }
+        .btn-nav.hidden { visibility: hidden; pointer-events: none; }
+
+        .container { max-width: 1300px; margin: 0 auto; padding: 20px 20px; position: relative; }
+        .hidden { display: none !important; }
+
+        /* --- LOGO --- */
+        .logo-container {
+            text-align: center; 
+            margin-bottom: 20px; 
+            margin-top: 20px;
+            transition: all 0.5s ease;
+        }
+        
+        .main-logo {
+            max-width: 350px; /* Default Large Size */
+            width: 100%;
+            display: inline-block;
+        }
+
+        /* Small Logo State (Added via JS on launch) */
+        .logo-container.small {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .logo-container.small .main-logo {
+            max-width: 120px; /* Tiny size for dashboard */
+        }
+
+        /* --- SETUP AREA --- */
+        .setup-wrapper {
+            background: var(--panel-bg); border: var(--border);
+            padding: 50px; text-align: center;
+            max-width: 1000px; margin: 0 auto;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .mode-select {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px; margin-bottom: 40px;
+        }
+
+        .mode-option {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            padding: 25px; cursor: pointer; transition: 0.3s;
+        }
+        .mode-option:hover { background: rgba(0, 242, 255, 0.1); border-color: var(--electric-cyan); transform: translateY(-5px); }
+        .mode-option.active {
+            border-color: var(--electric-cyan);
+            background: linear-gradient(135deg, rgba(0, 242, 255, 0.2), transparent);
+            box-shadow: 0 0 15px var(--electric-cyan);
+        }
+        .mode-title { font-family: var(--font-title); font-size: 1.5rem; display: block; margin-bottom: 5px; }
+        .mode-desc { font-size: 0.9rem; color: #aaa; }
+
+        /* --- INPUTS --- */
+        .input-area {
+            display: flex; gap: 15px; justify-content: center; margin-bottom: 30px; flex-wrap: wrap;
+        }
+        input[type="text"] {
+            background: rgba(0,0,0,0.7); border: 1px solid #555;
+            padding: 15px; color: white;
+            font-family: var(--font-body); font-size: 1.1rem;
+            width: 280px; outline: none; 
+            /* Allows mixed case input */
+        }
+        input:focus { border-color: var(--electric-cyan); box-shadow: 0 0 10px rgba(0,242,255,0.2); }
+
+        .btn-primary {
+            background: linear-gradient(90deg, var(--royal-blue), var(--electric-cyan));
+            color: white; border: none;
+            padding: 15px 40px; font-family: var(--font-title);
+            font-size: 1.2rem; text-transform: uppercase; cursor: pointer;
+            transition: 0.3s; letter-spacing: 1px; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+        }
+        .btn-primary:hover { filter: brightness(1.2); transform: scale(1.02); }
+
+        .tag-list { min-height: 40px; margin-bottom: 20px; }
+        .tag {
+            display: inline-block; padding: 6px 14px;
+            background: rgba(0, 242, 255, 0.15);
+            margin: 5px; border: 1px solid var(--electric-cyan);
+            font-family: var(--font-title); font-size: 0.9rem;
+        }
+
+        /* --- DASHBOARD --- */
+        .dashboard-grid {
+            display: grid; grid-template-columns: 2fr 1.2fr; gap: 30px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        .dashboard-grid.full-width { grid-template-columns: 1fr; }
+
+        @keyframes fadeIn { from{opacity:0; transform:translateY(20px);} to{opacity:1; transform:translateY(0);} }
+        
+        .panel {
+            background: var(--panel-bg); border: var(--border);
+            padding: 25px; position: relative;
+        }
+        
+        h3 {
+            color: var(--electric-cyan); font-family: var(--font-title);
+            font-size: 1.8rem; margin-top: 0; 
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding-bottom: 15px; text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .fixture-list-container { max-height: 600px; overflow-y: auto; padding-right: 5px; }
+        .fixture-row {
+            display: grid; grid-template-columns: 1fr 140px 1fr; 
+            align-items: center; padding: 12px; margin-bottom: 8px;
+            background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+            border: 1px solid rgba(255,255,255,0.05); transition: 0.2s;
+        }
+        .fixture-row:hover { border-color: var(--electric-cyan); background: rgba(0, 242, 255, 0.05); }
+
+        .team-name { font-family: var(--font-title); font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 10px; }
+        .home { text-align: right; } .away { text-align: left; }
+
+        .score-box { display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .score-inp {
+            width: 45px; height: 40px; text-align: center;
+            background: #000; border: 1px solid #444;
+            color: var(--electric-cyan); font-family: var(--font-title); font-size: 1.4rem; outline: none;
+        }
+        .score-inp:focus { border-color: white; box-shadow: 0 0 10px var(--electric-cyan); }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+
+        table { width: 100%; border-collapse: collapse; font-family: var(--font-body); }
+        th { text-align: left; color: #888; padding: 10px; border-bottom: 1px solid #444; font-size: 0.9rem; text-transform: uppercase; }
+        td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 1.1rem; }
+        tr:first-child td { color: var(--electric-cyan); }
+
+        .bracket-vis { overflow-x: auto; padding: 20px 0; display: flex; justify-content: center; }
+        .playoff-svg-container { position: relative; height: 600px; background: rgba(0,0,0,0.3); border: 1px solid #333; margin-top: 20px; }
+        .node-box {
+            position: absolute; width: 220px; padding: 15px;
+            background: #020b20; border: 2px solid var(--electric-cyan);
+            z-index: 2; display: flex; flex-direction: column; gap: 5px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        .node-label { color: var(--electric-cyan); font-family: var(--font-title); font-size: 0.9rem; }
+        .arrow-layer { position: absolute; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+        .line-path { fill: none; stroke: var(--electric-cyan); stroke-width: 2; filter: drop-shadow(0 0 5px var(--electric-cyan)); }
+
+        @media (max-width: 900px) { 
+            .dashboard-grid { grid-template-columns: 1fr; } 
+            .header-title { display: none; } 
+        }
+    </style>
+</head>
+<body>
+
+<video autoplay muted loop playsinline id="bg-video" poster="poster.jpg" preload="auto">
+    <source src="background.webm" type="video/webm">
+    <source src="background.mp4" type="video/mp4">
+</video>
+<div class="overlay"></div>
+
+<header>
+    <button class="btn-nav hidden" id="btn-back" onclick="handleBack()">
+        &#8592; Back to Setup
+    </button>
+    <div class="header-title">football tournament management system</div>
+    <button class="btn-nav" onclick="undo()">
+        &#8634; Undo
+    </button>
+</header>
+
+<div class="container">
+
+    <div class="logo-container" id="main-logo-box">
+        <img src="logo.png" alt="Tournament Logo" class="main-logo">
+    </div>
+
+    <div id="setup-screen">
+        <div class="setup-wrapper">
+            <div class="mode-select">
+                <div class="mode-option active" onclick="setMode(1, this)">
+                    <span class="mode-title">LEAGUE</span>
+                    <span class="mode-desc">Round Robin Table</span>
+                </div>
+                <div class="mode-option" onclick="setMode(2, this)">
+                    <span class="mode-title">KNOCKOUT</span>
+                    <span class="mode-desc">Elimination Bracket</span>
+                </div>
+                <div class="mode-option" onclick="setMode(3, this)">
+                    <span class="mode-title">PLAYOFFS</span>
+                    <span class="mode-desc">League + Top 4</span>
+                </div>
+                <div class="mode-option" onclick="setMode(4, this)">
+                    <span class="mode-title">GROUPS</span>
+                    <span class="mode-desc">2 Groups + Playoffs</span>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <input type="text" id="p-name" placeholder="Player name (Ex. Rishik)">
+                <input type="text" id="c-name" placeholder="Club name (Ex. Real Madrid)">
+                <button class="btn-primary" onclick="addTeam()">ADD</button>
+            </div>
+
+            <div id="tags" class="tag-list"></div>
+            <button id="btn-launch" class="btn-primary hidden" style="width:100%" onclick="launchTournament()">INITIALIZE TOURNAMENT</button>
+        </div>
+    </div>
+
+    <div id="dashboard" class="dashboard-grid hidden">
+        
+        <div class="panel" id="main-panel" style="overflow-x: auto;">
+            <h3 id="panel-title">Standings</h3>
+            
+            <div id="tables-area"></div>
+            <div id="bracket-area" class="bracket-vis hidden"></div>
+            
+            <div id="playoff-area" class="playoff-svg-container hidden">
+                <svg class="arrow-layer">
+                    <path d="M 230 70 L 330 70 L 330 200" class="line-path" /> 
+                    <path d="M 230 420 L 330 420 L 330 290" class="line-path" />
+                    <path d="M 330 245 L 480 245" class="line-path" />
+                    <path d="M 700 245 L 860 245" class="line-path" /> 
+                    <path d="M 230 50 L 970 50 L 970 200" class="line-path" style="stroke-dasharray:5;" />
+                </svg>
+            </div>
+        </div>
+
+        <div class="panel" id="match-panel">
+            <h3>Match Centre</h3>
+            <div id="fixtures-list" class="fixture-list-container"></div>
+            <button id="advance-btn" class="btn-primary hidden" style="width:100%; margin-top:20px;" onclick="initPlayoffs()">START PLAYOFFS</button>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    // --- APP CORE ---
+    let app = { mode: 1, teams: [], fixtures: [], history: [], phase: 'setup', groups: { A: [], B: [] }, playoffData: {} };
+
+    function saveState() {
+        if (app.history.length > 5) app.history.shift();
+        app.history.push(JSON.parse(JSON.stringify({ ...app, history: [] })));
+    }
+    function undo() {
+        if (!app.history.length) return alert("Nothing to undo.");
+        const prev = app.history.pop();
+        Object.assign(app, prev);
+        render();
+    }
+    function handleBack() {
+        if(confirm("Return to setup? Current data will be lost.")) location.reload();
+    }
+
+    // --- SETUP ---
+    function setMode(m, el) {
+        app.mode = m;
+        document.querySelectorAll('.mode-option').forEach(e => e.classList.remove('active'));
+        el.classList.add('active');
+    }
+    
+    function addTeam() {
+        const pn = document.getElementById('p-name');
+        const cn = document.getElementById('c-name');
+        
+        // Mixed case allowed
+        if (pn.value.trim() && cn.value.trim()) {
+            app.teams.push({ 
+                id: Date.now(), 
+                name: pn.value.trim(), 
+                club: cn.value.trim(), 
+                mp: 0, w: 0, d: 0, l: 0, pts: 0, gf: 0, ga: 0 
+            });
+            pn.value = ''; cn.value = '';
+            renderTags();
+            if (app.teams.length >= 2) document.getElementById('btn-launch').classList.remove('hidden');
+        }
+    }
+    
+    function renderTags() {
+        document.getElementById('tags').innerHTML = app.teams.map(t => `<span class="tag">${t.name} (${t.club})</span>`).join('');
+    }
+
+    // --- LAUNCH ---
+    function launchTournament() {
+        saveState();
+        app.phase = (app.mode === 2) ? 'knockout' : 'league';
+        
+        document.getElementById('setup-screen').classList.add('hidden');
+        document.getElementById('dashboard').classList.remove('hidden');
+        document.getElementById('btn-back').classList.remove('hidden'); 
+        document.getElementById('main-logo-box').classList.add('small');
+
+        if (app.mode === 1 || app.mode === 3) app.fixtures = createSchedule(app.teams);
+        else if (app.mode === 2) initBracket(app.teams);
+        else if (app.mode === 4) {
+            const mid = Math.ceil(app.teams.length / 2);
+            app.groups.A = app.teams.slice(0, mid);
+            app.groups.B = app.teams.slice(mid);
+            let fA = createSchedule(app.groups.A).map(f => ({ ...f, group: 'A' }));
+            let fB = createSchedule(app.groups.B).map(f => ({ ...f, group: 'B' }));
+            app.fixtures = [...fA, ...fB];
+        }
+        render();
+    }
+
+    function createSchedule(list) {
+        let pool = [];
+        for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) pool.push({ home: list[i], away: list[j], hS: null, aS: null, done: false });
+        pool.sort(() => Math.random() - 0.5);
+        
+        let ordered = [], remaining = [...pool];
+        while (remaining.length > 0) {
+            let last = ordered.length ? ordered[ordered.length - 1] : null;
+            let idx = 0;
+            if (last) {
+                let safeIdx = remaining.findIndex(m => m.home.id !== last.home.id && m.home.id !== last.away.id && m.away.id !== last.home.id && m.away.id !== last.away.id);
+                if (safeIdx !== -1) idx = safeIdx;
+            }
+            ordered.push(remaining[idx]);
+            remaining.splice(idx, 1);
+        }
+        return ordered;
+    }
+
+    // --- RENDER ---
+    function render() {
+        const tableArea = document.getElementById('tables-area');
+        const brackArea = document.getElementById('bracket-area');
+        const playArea = document.getElementById('playoff-area');
+        const fixList = document.getElementById('fixtures-list');
+        const title = document.getElementById('panel-title');
+        const matchPanel = document.getElementById('match-panel');
+        const dashboard = document.getElementById('dashboard');
+
+        tableArea.classList.add('hidden'); 
+        brackArea.classList.add('hidden'); 
+        playArea.classList.add('hidden'); 
+        fixList.innerHTML = '';
+        matchPanel.classList.remove('hidden'); 
+        dashboard.classList.remove('full-width'); 
+
+        if (app.mode !== 2 && app.phase !== 'playoffs') {
+            tableArea.classList.remove('hidden');
+            title.innerText = "STANDINGS";
+            tableArea.innerHTML = app.mode === 4 ? buildTable(app.groups.A, "Group A") + buildTable(app.groups.B, "Group B") : buildTable(app.teams, "League Table");
+            
+            app.fixtures.forEach((f, i) => { if(!f.isPlayoff) fixList.innerHTML += buildFixtureHTML(f, i); });
+            
+            if(app.fixtures.every(f => f.done) && app.fixtures.length > 0 && (app.mode === 3 || app.mode === 4)) {
+                document.getElementById('advance-btn').classList.remove('hidden');
+            }
+        }
+
+        if (app.mode === 2) { 
+            brackArea.classList.remove('hidden'); 
+            title.innerText = "BRACKET"; 
+            matchPanel.classList.add('hidden'); 
+            dashboard.classList.add('full-width');
+            renderBracketTree(); 
+        }
+
+        if (app.phase === 'playoffs') { 
+            playArea.classList.remove('hidden'); 
+            title.innerText = "CHAMPIONSHIP PLAYOFFS"; 
+            matchPanel.classList.add('hidden');
+            dashboard.classList.add('full-width');
+            renderPlayoffNodes(); 
+        }
+    }
+
+    function buildTable(list, name) {
+        let sorted = [...list].sort((a,b) => b.pts - a.pts || (b.gf-b.ga)-(a.gf-a.ga));
+        let rows = sorted.map((t,i) => `<tr><td>${i+1}</td><td><strong>${t.name}</strong> <span style="font-size:0.8em; color:#888;">${t.club}</span></td><td>${t.mp}</td><td>${t.w}</td><td>${t.d}</td><td>${t.l}</td><td><strong>${t.pts}</strong></td></tr>`).join('');
+        return `<h4 style="margin:10px 0; color:#fff; font-family:var(--font-title)">${name}</h4><table><tr><th>#</th><th>Club</th><th>P</th><th>W</th><th>D</th><th>L</th><th>Pts</th></tr>${rows}</table>`;
+    }
+
+    function buildFixtureHTML(f, i) {
+        return `<div class="fixture-row">
+            <div class="team-name home">${f.home.name}</div>
+            <div class="score-box">
+                <input type="number" min="0" oninput="validity.valid||(value='');" class="score-inp" value="${f.hS!==null?f.hS:''}" onchange="updateScore(${i},'h',this.value)">
+                <span style="color:#666">-</span>
+                <input type="number" min="0" oninput="validity.valid||(value='');" class="score-inp" value="${f.aS!==null?f.aS:''}" onchange="updateScore(${i},'a',this.value)">
+            </div>
+            <div class="team-name away">${f.away.name}</div>
+        </div>`;
+    }
+
+    function updateScore(i, side, val) {
+        saveState();
+        let num = parseInt(val);
+        app.fixtures[i][side==='h'?'hS':'aS'] = (isNaN(num)||num<0)?null:num;
+        app.fixtures[i].done = (app.fixtures[i].hS!==null && app.fixtures[i].aS!==null);
+        recalc(); render();
+    }
+
+    function recalc() {
+        app.teams.forEach(t => { t.mp=0; t.w=0; t.d=0; t.l=0; t.pts=0; t.gf=0; t.ga=0; });
+        app.fixtures.forEach(f => {
+            if(f.done && !f.isPlayoff) {
+                let h = app.teams.find(x => x.id === f.home.id), a = app.teams.find(x => x.id === f.away.id);
+                if(h && a) {
+                    h.mp++; a.mp++; h.gf+=f.hS; h.ga+=f.aS; a.gf+=f.aS; a.ga+=f.hS;
+                    if(f.hS > f.aS) { h.w++; h.pts+=3; a.l++; } else if(f.hS < f.aS) { a.w++; a.pts+=3; h.l++; } else { h.d++; h.pts++; a.d++; a.pts++; }
+                }
+            }
+        });
+    }
+
+    // --- BRACKET LOGIC ---
+    let bracketRounds = [];
+    function initBracket(list) {
+        let pool = [...list].sort(() => Math.random()-0.5);
+        if(pool.length%2!==0) pool.pop(); 
+        let r1 = [];
+        for(let i=0; i<pool.length; i+=2) r1.push({h:pool[i], a:pool[i+1], hS:null, aS:null, win:null});
+        bracketRounds = [r1];
+        let c = r1.length;
+        while(c>1) { c/=2; let nr=[]; for(let k=0;k<c;k++)nr.push({h:null,a:null,hS:null,aS:null,win:null}); bracketRounds.push(nr); }
+    }
+    function renderBracketTree() {
+        let area = document.getElementById('bracket-area'); area.innerHTML = '';
+        bracketRounds.forEach((rnd, rI) => {
+            let col = document.createElement('div');
+            col.style = "display:flex; flex-direction:column; justify-content:space-around; margin:0 20px;";
+            rnd.forEach((m, mI) => {
+                let box = document.createElement('div');
+                box.style = "background:rgba(255,255,255,0.05); border:1px solid #444; padding:10px; margin:10px 0; width:220px;";
+                if(m.win) box.style.borderColor = "var(--electric-cyan)";
+                let hN = m.h ? m.h.name : '...', aN = m.a ? m.a.name : '...';
+                let dis = (!m.h||!m.a)?'disabled':'';
+                box.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>${hN}</span> <input type="number" min="0" oninput="validity.valid||(value='');" style="width:30px; background:black; border:none; color:white; text-align:center;" ${dis} value="${m.hS??''}" onchange="upBrack(${rI},${mI},'h',this.value)"></div>
+                    <div style="display:flex; justify-content:space-between;"><span>${aN}</span> <input type="number" min="0" oninput="validity.valid||(value='');" style="width:30px; background:black; border:none; color:white; text-align:center;" ${dis} value="${m.aS??''}" onchange="upBrack(${rI},${mI},'a',this.value)"></div>
+                `;
+                col.appendChild(box);
+            });
+            area.appendChild(col);
+        });
+    }
+    function upBrack(r, m, side, val) {
+        let match = bracketRounds[r][m], num = parseInt(val);
+        match[side==='h'?'hS':'aS'] = (isNaN(num)||num<0)?null:num;
+        if(match.hS!==null && match.aS!==null) {
+            let w = match.hS > match.aS ? match.h : match.a;
+            match.win = w;
+            if(r+1 < bracketRounds.length) {
+                let nm = bracketRounds[r+1][Math.floor(m/2)];
+                if(m%2===0) nm.h = w; else nm.a = w;
+            } else { alert("🏆 Winner: " + w.name); }
+        }
+        render();
+    }
+
+    function initPlayoffs() {
+        saveState(); app.phase = 'playoffs';
+        let top4 = (app.mode===3) ? [...app.teams].sort((a,b)=>b.pts-a.pts).slice(0,4) : [...[app.groups.A, app.groups.B].flatMap(g=>g.sort((a,b)=>b.pts-a.pts).slice(0,2))].sort((a,b)=>b.pts-a.pts);
+        
+        app.playoffData = {
+            q1: {h:top4[0], a:top4[1], hS:null, aS:null, l:"QUALIFIER 1 (1 vs 2)"},
+            elim: {h:top4[2], a:top4[3], hS:null, aS:null, l:"ELIMINATOR (3 vs 4)"},
+            q2: {h:null, a:null, hS:null, aS:null, l:"QUALIFIER 2"},
+            final: {h:null, a:null, hS:null, aS:null, l:"GRAND FINAL"}
+        };
+        render();
+    }
+    
+    function renderPlayoffNodes() {
+        const pos = { 
+            q1: "top:20px; left:20px;", 
+            elim: "top:350px; left:20px;", 
+            q2: "top:200px; left:480px;", 
+            final: "top:200px; left:860px;" 
+        };
+        const area = document.getElementById('playoff-area');
+        document.querySelectorAll('.node-box').forEach(n=>n.remove());
+        
+        ['q1','elim','q2','final'].forEach(key => {
+            let m = app.playoffData[key], div = document.createElement('div');
+            div.className = "node-box"; div.style = pos[key];
+            let hN = m.h ? m.h.name : 'TBD', aN = m.a ? m.a.name : 'TBD';
+            let hStyle = (m.hS !== null && m.aS !== null && m.hS > m.aS) ? 'color:var(--electric-cyan); text-shadow:0 0 5px var(--electric-cyan);' : '';
+            let aStyle = (m.hS !== null && m.aS !== null && m.aS > m.hS) ? 'color:var(--electric-cyan); text-shadow:0 0 5px var(--electric-cyan);' : '';
+
+            div.innerHTML = `<strong class="node-label">${m.l}</strong>
+                <div style="display:flex; justify-content:space-between; margin-bottom:4px;"><span style="${hStyle}">${hN}</span> <input type="number" min="0" oninput="validity.valid||(value='');" style="width:40px; text-align:center; background:black; border:1px solid #444; color:white;" value="${m.hS??''}" onchange="upPlay('${key}','h',this.value)"></div>
+                <div style="display:flex; justify-content:space-between;"><span style="${aStyle}">${aN}</span> <input type="number" min="0" oninput="validity.valid||(value='');" style="width:40px; text-align:center; background:black; border:1px solid #444; color:white;" value="${m.aS??''}" onchange="upPlay('${key}','a',this.value)"></div>`;
+            area.appendChild(div);
+        });
+    }
+
+    function upPlay(k,s,v) {
+        let m = app.playoffData[k], num = parseInt(v);
+        m[s==='h'?'hS':'aS'] = (isNaN(num)||num<0)?null:num;
+        if(m.hS!==null && m.aS!==null) {
+            let w = m.hS>m.aS?m.h:m.a, l = m.hS>m.aS?m.a:m.h;
+            if(k==='q1'){ app.playoffData.final.h=w; app.playoffData.q2.h=l; }
+            if(k==='elim'){ app.playoffData.q2.a=w; }
+            if(k==='q2'){ app.playoffData.final.a=w; }
+            if(k==='final'){ setTimeout(() => alert("🏆 " + w.name + " IS THE CHAMPION!"), 100); }
+        }
+        render();
+    }
+</script>
+</body>
+</html>
